@@ -13,6 +13,15 @@
 
 ## Coding Principles
 
+### Solving the problem correctly
+
+- Find the root cause before choosing a fix, and fix it where it starts, not where it shows.
+- Find out why the existing code is built the way it is, from the code, its comments and its history, before changing it. Ask when the reason is unclear.
+- Check how the libraries, frameworks and standards involved intend the problem to be solved, and follow that.
+- The same input always gives the same result. Do not add conditions that guess intent from the surroundings; when two different results are needed, give each its own explicit input. For example, a Markdown image that renders as a figure when it is alone in a paragraph and as an image inside a sentence is wrong; an image syntax and a separate figure tag are right.
+- A fix that hides the symptom is not a fix: no suppressed errors, special cases or workarounds.
+- When the correct solution changes the approved proposal, specification, plan or existing behavior, stop and propose it, instead of building a workaround that fits the plan.
+
 ### Readability and simplicity
 
 - Write small, focused methods and functions with one clear responsibility.
