@@ -7,7 +7,7 @@
 5. Ask for review and approval of the proposal.
 6. Draft `spec.md` in plain language, with observable requirements and testable acceptance criteria that cover the proposal. Surface important open questions.
 7. Ask for review and approval of the specification before treating it as final.
-8. Draft `plan.md` stating what must exist to meet each functional requirement, with the entries in the order to build them, as plain statements with no explanations or steps. Record each real choice between options under Decisions.
+8. Design the correct solution, following "Solving the problem correctly" in [implementing.md](implementing.md): for a bug, find the root cause, why the code is built that way, and how the tools involved intend it. Then draft `plan.md` stating what must exist to meet each functional requirement, with the entries in the order to build them, as plain statements with no explanations or steps. Record each real choice between options under Decisions.
 9. Ask for review and approval of the plan.
 10. Draft `qa.md` with test coverage for the acceptance criteria and applicable non-functional requirements.
 11. Ask for review and approval of the QA plan. Do not implement code.
