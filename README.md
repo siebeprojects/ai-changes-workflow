@@ -7,8 +7,7 @@ changes/feat-short-name/
 ├── proposal.md   the user story, why, and what we would like to have
 ├── spec.md       requirements and acceptance criteria, in plain language
 ├── plan.md       what must exist to meet each requirement, and the decisions
-├── qa.md         how each acceptance criterion is verified
-└── tasks/        one small file per task, for an agent
+└── qa.md         how each acceptance criterion is verified
 ```
 
 A new change starts with only `proposal.md`. Each next document is added when you start on it, so the files in a folder show how far it is.

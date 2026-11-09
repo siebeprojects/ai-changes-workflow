@@ -16,16 +16,15 @@
 
 <!-- changes-workflow:start -->
 ## Change documentation
-- Keep each independent change (new feature, bug fix, refactoring, or other work) under `changes/<type>-<short-name>/`, with a type such as `feat`, `fix` or `refactor`.
+- Keep each independent change (new feature, bug fix, refactoring, or other work) under `changes/<type>-<short-name>/`, with one of these types: `feat` (new functionality), `fix` (bug fix), `refactor` (code restructured, behavior the same), `perf` (faster or lighter), `test` (tests only), `docs` (documentation only) or `chore` (maintenance, such as tooling, templates or workflow). Branches and pull requests use the same type.
 - `proposal.md` gives the user story, why the change is needed, and what we would like to have, in plain language.
 - `spec.md` defines the functional and non-functional requirements, acceptance criteria, boundaries and constraints, in plain language. How it is built goes in `plan.md`.
-- `plan.md` states what must exist to meet each functional requirement, with no explanations or steps, and records the technical decisions.
+- `plan.md` states what must exist to meet each functional requirement, in the order to build them, with no explanations or steps, and records the technical decisions. An agent builds one functional requirement entry at a time.
 - `qa.md` defines how the change is verified and records the results.
-- `tasks/` holds one small file per task, numbered in the order to do them. An agent implements one task at a time, using `spec.md` and `plan.md`.
 - Use `changes/_templates/` when starting a new change.
 - Follow the templates exactly: add no sections or fields, and keep content in the section it belongs to. If something has no place, or the template is wrong, raise it and propose a template change.
 - Keep documentation proportional to the size of the change.
-- Do not implement a change until its proposal, specification, plan, QA plan, and tasks have been reviewed and approved.
+- Do not implement a change until its proposal, specification, plan, and QA plan have been reviewed and approved.
 - Follow the approved `proposal.md`, `spec.md` and `plan.md`. If a deviation is needed, stop and ask for approval.
-- Use the `changes-workflow` skill to plan a change or to implement one of its tasks.
+- Use the `changes-workflow` skill to plan a change or to build it.
 <!-- changes-workflow:end -->

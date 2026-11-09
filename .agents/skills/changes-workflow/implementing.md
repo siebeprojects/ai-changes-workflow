@@ -1,11 +1,11 @@
-# Implementing a task
+# Implementing a change
 
 ## Workflow
 
-1. Read `AGENTS.md` and the change's `proposal.md`, `spec.md`, `plan.md`, `qa.md`, and the given file in `tasks/`. Ask which task to implement if it is not given.
-2. Confirm that the proposal, specification, technical plan, QA plan, and tasks are approved and that material questions are resolved. If approval is unclear, ask before coding.
+1. Read `AGENTS.md` and the change's `proposal.md`, `spec.md`, `plan.md`, and `qa.md`. Ask which functional requirement entry of the plan to build if it is not given; otherwise take the next one in the plan.
+2. Confirm that the proposal, specification, technical plan, and QA plan are approved and that material questions are resolved. If approval is unclear, ask before coding.
 3. Inspect the relevant existing code, identify reusable functionality, and explain the proposed small change. Wait for explicit approval before modifying code.
-4. Implement only the given task, following the approved technical approach and the coding principles below.
+4. Build only that functional requirement entry, following the approved technical approach and the coding principles below.
 5. Write or update the relevant automated tests, preferably before implementation when practical. Include normal behavior, error cases, and boundaries identified in `qa.md`.
 6. Run the relevant tests and checks. Do not claim that a test passed unless it was actually executed.
 7. Report changed files, test results, outstanding issues, and any deviations. Update the status of each item in Test Coverage in `qa.md`.

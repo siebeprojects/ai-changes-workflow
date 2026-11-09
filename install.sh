@@ -113,6 +113,11 @@ if [ "$CHANGES" != "changes" ]; then
   rm -rf "$STAGE/changes"
 fi
 
+# An AGENTS.md or CLAUDE.md that exists before installing belongs to the
+# repository: it is not excluded from git, so the added block is committed.
+AGENTS_EXISTED=0; [ -e "$TARGET/AGENTS.md" ] && AGENTS_EXISTED=1
+CLAUDE_EXISTED=0; [ -e "$TARGET/CLAUDE.md" ] && CLAUDE_EXISTED=1
+
 IS_GIT=0
 if git -C "$TARGET" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   IS_GIT=1
@@ -358,8 +363,9 @@ print_summary() {
 }
 
 # Privately ignore the agent files by adding root-anchored patterns to
-# .git/info/exclude (never committed). Files git already tracks, such as a
-# committed AGENTS.md, are not excluded: commit the added block with them.
+# .git/info/exclude (never committed). AGENTS.md and CLAUDE.md are only
+# excluded when this script created them; the repository's own files, and
+# anything git already tracks, are not excluded: commit the changes with them.
 # The templates are never excluded; an old /changes/_templates/ line from
 # earlier versions is removed.
 update_exclude() {
@@ -369,13 +375,19 @@ update_exclude() {
     return 0
   fi
 
-  local patterns="/AGENTS.md /CLAUDE.md /.agents/skills/$SKILL/ /.claude/skills/$SKILL /.changes-workflow-backup/"
-  [ "$EXTERNAL_CHANGES" -eq 1 ] && patterns="$patterns /.claude/settings.local.json"
-
   # --git-path also resolves correctly for worktrees and submodules.
   local file
   file="$(git -C "$TARGET" rev-parse --git-path info/exclude)"
   case "$file" in /*) ;; *) file="$TARGET/$file" ;; esac
+
+  local patterns="/.agents/skills/$SKILL/ /.claude/skills/$SKILL /.changes-workflow-backup/"
+  if [ "$AGENTS_EXISTED" -eq 0 ]; then
+    patterns="/AGENTS.md $patterns"
+  elif ! grep -qsxF -- "/AGENTS.md" "$file"; then
+    echo "  note     AGENTS.md belongs to the repository; not excluded (commit the workflow block)"
+  fi
+  [ "$CLAUDE_EXISTED" -eq 0 ] && patterns="/CLAUDE.md $patterns"
+  [ "$EXTERNAL_CHANGES" -eq 1 ] && patterns="$patterns /.claude/settings.local.json"
 
   if grep -qsxF -- "/changes/_templates/" "$file"; then
     echo "  include  /changes/_templates/ (removed from .git/info/exclude)"
