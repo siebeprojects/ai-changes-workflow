@@ -15,6 +15,8 @@
 
 ### Solving the problem correctly
 
+- What we build works in every case, with no known edge cases. Check each place the feature can be used, such as on its own line, inside a sentence and inside a link, and only propose a solution that works in all of them. When no solution does, say so plainly and ask.
+- Build only what was asked. Do not add new functionality while solving a problem; propose it separately.
 - Find the root cause before choosing a fix, and fix it where it starts, not where it shows.
 - Find out why the existing code is built the way it is, from the code, its comments and its history, before changing it. Ask when the reason is unclear.
 - Check how the libraries, frameworks and standards involved intend the problem to be solved, and follow that.
@@ -63,6 +65,7 @@
 A change is complete only when:
 
 - It satisfies the approved `proposal.md`, `spec.md` and `plan.md`.
+- It works in every case it can be used in, verified, with no known edge cases.
 - Relevant `qa.md` checks have been implemented and executed, or any exceptions are explicitly reported.
 - The implementation is readable, maintainable, and does not unnecessarily complicate future features.
 - Deviations, risks, and remaining issues have been reported.
