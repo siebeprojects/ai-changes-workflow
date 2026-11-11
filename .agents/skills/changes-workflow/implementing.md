@@ -8,7 +8,7 @@
 4. Build only that functional requirement entry, following the approved technical approach and the coding principles below.
 5. Write or update the relevant automated tests, preferably before implementation when practical. Include normal behavior, error cases, and boundaries identified in `qa.md`.
 6. Run the relevant tests and checks. Do not claim that a test passed unless it was actually executed.
-7. Report changed files, test results, outstanding issues, and any deviations. Update the status of each item in Test Coverage in `qa.md`.
+7. Report changed files, test results, outstanding issues, and any deviations. Put the test results in the pull request's Tests section, not in `qa.md`.
 8. Stop and request approval before changing the approved proposal, specification, architecture, or technical approach. Do not commit without permission.
 
 ## Coding Principles
@@ -58,7 +58,7 @@
 - Prefer testing observable behavior rather than private implementation details.
 - Include failure paths and relevant edge cases.
 - Run relevant regression tests to protect existing functionality.
-- Record what was tested, what passed, what failed, and what could not be run.
+- Record in the pull request what was tested, what passed, what failed, and what could not be run.
 
 ## Completion Criteria
 
