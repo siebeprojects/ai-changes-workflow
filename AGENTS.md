@@ -20,7 +20,7 @@
 - `proposal.md` gives the user story, why the change is needed, and what we would like to have, in plain language.
 - `spec.md` defines the functional and non-functional requirements, acceptance criteria, boundaries and constraints, in plain language. How it is built goes in `plan.md`.
 - `plan.md` states what must exist to meet each functional requirement, in the order to build them, with no explanations or steps, and records the technical decisions. An agent builds one functional requirement entry at a time.
-- `qa.md` defines how the change is verified and records the results.
+- `qa.md` defines upfront how the change is verified. The results go in the pull request.
 - Use `changes/_templates/` when starting a new change.
 - Follow the templates exactly: add no sections or fields, and keep content in the section it belongs to. If something has no place, or the template is wrong, raise it and propose a template change.
 - Keep documentation proportional to the size of the change.

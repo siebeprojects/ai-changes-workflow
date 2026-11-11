@@ -9,4 +9,4 @@
 - <Required setup and commands to run>
 
 ## Test Coverage
-- **AC-001:** <How it is verified, including error cases; mark Passed only when actually run> (Not run / Passed / Failed)
+- **AC-001:** <How it is verified, including error cases>

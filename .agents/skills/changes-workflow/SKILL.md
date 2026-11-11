@@ -10,7 +10,7 @@ Each change has its own folder, `changes/<type>-<short-name>/`, with one of thes
 1. `proposal.md`: the user story, why the change is needed, and what we would like to have.
 2. `spec.md`: functional and non-functional requirements, acceptance criteria, boundaries and constraints, in plain language.
 3. `plan.md`: what must exist to meet each functional requirement, in the order to build them, and the technical decisions.
-4. `qa.md`: how each acceptance criterion is verified, and the results.
+4. `qa.md`: how each acceptance criterion is verified, written before building. The results go in the pull request.
 
 The templates are in `changes/_templates/`. Follow them exactly.
 
