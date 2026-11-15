@@ -14,16 +14,19 @@
 # (never committed, never written to .gitignore). The templates in
 # changes/_templates/ are meant to be committed.
 #
-# A change is planned in changes/<name>/ (proposal.md, spec.md, plan.md) and
-# built with ./changes/<name>/ (qa.md, tasks.md) in each repository where the
-# code changes. The rules and the skill write `changes/` for the planning
-# documents and `./changes/` for the repository's own folder.
+# There is always one store: the folder that holds the templates
+# (changes/_templates/) and the planning documents of each change
+# (changes/<name>/: proposal.md, spec.md, plan.md). Each repository where the
+# code changes writes ./changes/<name>/ (qa.md, tasks.md) on the change's
+# branch. The rules and the skill write `changes/` for the store and
+# `./changes/` for the repository's own folder.
 #
-# With --changes <path>, the planning documents live elsewhere (for example a
-# separate store repo): the rules and the skill point `changes/` to that path,
-# only the qa.md and tasks.md templates are copied, and Claude Code gets
-# access to it. Install the store itself with --store: it gets only the
-# proposal.md, spec.md and plan.md templates.
+# By default the target repository is its own store and gets all templates.
+# With several repositories, the store is a separate repository installed with
+# --store, which also gets all templates. Each code repository is installed
+# with --changes <path> pointing to the store's changes folder: the rules and
+# the skill point `changes/` to that path, Claude Code gets access to it, and
+# no templates are copied, so they exist only in the store.
 #
 # Usage: ./install.sh [--force] [--dry-run] [--no-exclude] [--changes <path> | --store] <target-repo>
 
@@ -39,8 +42,6 @@ EXCLUDE=1
 TARGET=""
 CHANGES="changes"
 STORE=0
-PLANNING_TEMPLATES="proposal.md spec.md plan.md"
-WORK_TEMPLATES="qa.md tasks.md"
 
 usage() {
   cat <<EOF
@@ -50,7 +51,7 @@ Installs the changes workflow into <target-repo>:
   AGENTS.md                  workflow rules in a marked block (rest of the file is kept)
   CLAUDE.md                  imports AGENTS.md
   .agents/skills/$SKILL/     the skill, linked from .claude/skills/$SKILL
-  changes/_templates/        the document templates (commit these)
+  changes/_templates/        the document templates, only in the store (commit these)
 
 When a file already exists and differs, you are asked whether to overwrite
 it. Without a terminal (e.g. CI), conflicting files are skipped.
@@ -61,14 +62,15 @@ Options:
   --dry-run         Show what would happen without changing anything
   --no-exclude      Do not add the agent files to .git/info/exclude
                     (use this when they should be committed too)
-  --changes <path>  Where proposal.md, spec.md and plan.md live, relative to
-                    <target-repo> (default: changes). With another path, for
-                    example ../my-changes-store/changes, the rules and the skill
-                    point to that path, only the qa.md and tasks.md templates
-                    are copied, and Claude Code gets access to it through
-                    .claude/settings.local.json.
-  --store           <target-repo> is a separate store for proposal.md, spec.md
-                    and plan.md: only their templates are copied.
+  --changes <path>  The store's changes folder, relative to <target-repo>
+                    (default: changes, so the repository is its own store).
+                    With another path, for example
+                    ../my-changes-store/changes, the rules and the skill point
+                    to that path, Claude Code gets access to it through
+                    .claude/settings.local.json, and no templates are copied.
+  --store           <target-repo> is a separate store, used by the code
+                    repositories installed with --changes: it gets all
+                    templates.
   -h, --help        Show this help
 EOF
 }
@@ -127,12 +129,8 @@ if [ "$CHANGES" != "changes" ]; then
     [ -f "$f" ] || continue
     sed "s#\`changes/#\`$CHANGES/#g" "$f" > "$f.tmp" && mv "$f.tmp" "$f"
   done
-  # The planning templates live with the planning documents.
-  for t in $PLANNING_TEMPLATES; do rm -f "$STAGE/changes/_templates/$t"; done
-fi
-if [ "$STORE" -eq 1 ]; then
-  # qa.md and tasks.md are written in the code repositories, not in the store.
-  for t in $WORK_TEMPLATES; do rm -f "$STAGE/changes/_templates/$t"; done
+  # All templates live only in the store.
+  rm -rf "$STAGE/changes/_templates"
 fi
 
 # An AGENTS.md or CLAUDE.md that exists before installing belongs to the
@@ -352,6 +350,15 @@ report_old_skills() {
   done
 }
 
+# Mention templates copied into a code repository by earlier versions; the
+# templates now live only in the store. They are not removed.
+report_old_templates() {
+  [ "$EXTERNAL_CHANGES" -eq 1 ] || return 0
+  if [ -d "$TARGET/changes/_templates" ]; then
+    echo "  note     changes/_templates/ found; the templates now live only in $CHANGES/_templates/. Remove changes/_templates/ here."
+  fi
+}
+
 # Give Claude Code access to an external changes folder. Only creates the
 # local settings file; an existing one is not edited, only reported.
 install_claude_settings() {
@@ -449,7 +456,7 @@ echo "Installing the changes workflow"
 echo "  from: $SRC"
 echo "  into: $TARGET"
 [ "$EXTERNAL_CHANGES" -eq 1 ] && echo "  changes: $CHANGES"
-[ "$STORE" -eq 1 ] && echo "  mode: store (planning templates only)"
+[ "$STORE" -eq 1 ] && echo "  mode: store (all templates, used by the code repositories)"
 [ "$DRY_RUN" -eq 1 ] && echo "  mode: dry-run (no changes will be made)"
 echo
 
@@ -457,7 +464,7 @@ echo
 install_agents_md
 install_claude_md
 
-# 2. The skill and the templates that belong in this repository.
+# 2. The skill, and the templates when this repository is the store.
 for dir in ".agents/skills/$SKILL" changes/_templates; do
   [ -d "$STAGE/$dir" ] || continue
   while IFS= read -r f; do
@@ -466,6 +473,7 @@ for dir in ".agents/skills/$SKILL" changes/_templates; do
 done
 link_skill
 report_old_skills
+report_old_templates
 install_claude_settings
 
 # 3. Keep the agent files out of git, privately.
@@ -476,8 +484,9 @@ if [ "$DRY_RUN" -eq 0 ]; then
   echo
   echo "Next steps:"
   if [ "$EXTERNAL_CHANGES" -eq 1 ]; then
-    echo "  1. Review AGENTS.md, .agents/skills/$SKILL/ and changes/_templates/, and commit the templates."
-    echo "  2. Changes are planned in $CHANGES; qa.md and tasks.md go in changes/<name>/ here, on the change's branch."
+    echo "  1. Review AGENTS.md and .agents/skills/$SKILL/."
+    echo "  2. Changes are planned in $CHANGES, with the templates in $CHANGES/_templates/;"
+    echo "     qa.md and tasks.md go in changes/<name>/ here, on the change's branch."
   elif [ "$STORE" -eq 1 ]; then
     echo "  1. Review AGENTS.md, .agents/skills/$SKILL/ and changes/_templates/, and commit the templates."
     echo "  2. Start a change: mkdir changes/feat-short-name and copy the proposal template into it."

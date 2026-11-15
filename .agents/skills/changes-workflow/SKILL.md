@@ -16,7 +16,7 @@ Each repository where the change is built gets `./changes/<type>-<short-name>/` 
 4. `qa.md`: how the acceptance criteria built in this repository are verified, written before building. The results go in the pull request.
 5. `tasks.md`: the tasks for the functional requirement entries built in this repository, built one at a time.
 
-The templates for the first three are in `changes/_templates/`, for the last two in `./changes/_templates/`. Follow them exactly.
+The templates for all five are in `changes/_templates/`. Follow them exactly.
 
 - To plan a change, or add its next document, read [planning.md](planning.md).
 - To build a change, read [implementing.md](implementing.md).
