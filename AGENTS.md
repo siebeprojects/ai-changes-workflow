@@ -23,7 +23,7 @@
 - Each repository where the change is built gets `./changes/<type>-<short-name>/` on the change's branch, with `qa.md` and `tasks.md` for the part built in that repository, committed with the code.
 - `qa.md` defines upfront how the acceptance criteria built in this repository are verified. The results go in the pull request.
 - `tasks.md` lists the tasks for the functional requirement entries of `plan.md` built in this repository. An agent builds one task at a time.
-- Use `changes/_templates/` for `proposal.md`, `spec.md` and `plan.md`, and `./changes/_templates/` for `qa.md` and `tasks.md`.
+- Use the templates in `changes/_templates/` for all five documents, also for the `qa.md` and `tasks.md` written in `./changes/<type>-<short-name>/`.
 - Follow the templates exactly: add no sections or fields, and keep content in the section it belongs to. If something has no place, or the template is wrong, raise it and propose a template change.
 - Keep documentation proportional to the size of the change.
 - Do not implement a change until its proposal, specification, plan, QA plan and tasks have been reviewed and approved.

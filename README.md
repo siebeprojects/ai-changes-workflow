@@ -21,6 +21,8 @@ changes/feat-short-name/
 
 A new change starts with only `proposal.md`. Each next document is added when you start on it, so the files show how far it is. In a single repository, all five documents end up in the same folder.
 
+There is always one store: the place that holds the templates in `changes/_templates/` and the planning documents of each change. With one repository, the repository is its own store. With several, the store is a repository of its own, and the code repositories hold only their `qa.md` and `tasks.md`, so the templates are never copied around.
+
 ## Contents
 
 - `AGENTS.md`: engineering rules for agents (Codex, Claude Code and other compatible agents). The workflow rules sit in a marked block.
@@ -42,25 +44,27 @@ Clone this repository anywhere, then run the script, passing the target reposito
 
 Run it again at any time to update a repository.
 
-### Planning documents in a separate repository
+By default the repository is its own store and gets all five templates.
 
-Keep `proposal.md`, `spec.md` and `plan.md` in their own repository (for example `my-changes-store`), and `qa.md` and `tasks.md` with the code:
+### A separate store for several repositories
+
+Keep the templates and the planning documents in their own repository (for example `my-changes-store`), and `qa.md` and `tasks.md` with the code:
 
 ```bash
-./install.sh --store /path/to/my-changes-store                         # planning templates
-./install.sh --changes ../my-changes-store/changes /path/to/code-repo  # qa.md and tasks.md templates
+./install.sh --store /path/to/my-changes-store                         # the store, with all templates
+./install.sh --changes ../my-changes-store/changes /path/to/code-repo  # a code repository, no templates
 ```
 
-With `--store`, the store gets only the planning templates. With `--changes`, the code repository gets only the `qa.md` and `tasks.md` templates, the rules and the skill point to the store's folder, and Claude Code gets access to it through `.claude/settings.local.json` (local, never committed). Agents plan and build from the code repository, where they can read the code: they write the planning documents into the store, and `qa.md` and `tasks.md` into `changes/<name>/` on the change's branch. A change built in several repositories gets a `qa.md` and `tasks.md` in each, for the part built there. The change name connects everything: the store folder, the branches and the folders in each repository all have the same name, so `qa.md` and `tasks.md` name the planning folder as plain text, such as `my-changes-store/changes/feat-short-name`, instead of linking to it.
+With `--store`, the store gets all five templates. With `--changes`, the code repository gets no templates: the rules and the skill point to the store's folder, also for the `qa.md` and `tasks.md` templates, and Claude Code gets access to it through `.claude/settings.local.json` (local, never committed). A `changes/_templates/` left in a code repository by an earlier version is reported, not removed. Agents plan and build from the code repository, where they can read the code: they write the planning documents into the store, and `qa.md` and `tasks.md` into `changes/<name>/` on the change's branch. A change built in several repositories gets a `qa.md` and `tasks.md` in each, for the part built there. The change name connects everything: the store folder, the branches and the folders in each repository all have the same name, so `qa.md` and `tasks.md` name the planning folder as plain text, such as `my-changes-store/changes/feat-short-name`, instead of linking to it.
 
-The rules and the skill write `changes/` for the planning documents and `./changes/` for the repository's own folder; `--changes` only rewrites the first.
+The rules and the skill write `changes/` for the store and `./changes/` for the repository's own folder; `--changes` only rewrites the first.
 
 ## What the script does
 
 - **`AGENTS.md`:** creates it with the default rules if missing. In an existing `AGENTS.md`, it only adds or replaces the block between `<!-- changes-workflow:start -->` and `<!-- changes-workflow:end -->`, and keeps the rest. An `AGENTS.md` from an earlier version without markers is replaced as a whole, after asking.
 - **`CLAUDE.md`:** creates it if missing; if one exists, it prepends `@AGENTS.md` and keeps the existing content.
 - **The skill:** copies `.agents/skills/changes-workflow/` and links it from `.claude/skills/changes-workflow`. Old `plan-change` and `implement-change` skills are reported, not removed.
-- **Templates:** copies `changes/_templates/`: all five by default, only `qa.md` and `tasks.md` with `--changes`, only `proposal.md`, `spec.md` and `plan.md` with `--store`. Commit them with the repository.
+- **Templates:** copies all five to `changes/_templates/` in the store only: by default and with `--store`, not with `--changes`. Commit them with the store.
 - **Conflicts:** asks for each existing file that differs: `[y]es / [n]o / [d]iff / [a]ll / [q]uit` (default: no). Without a terminal (e.g. CI), conflicts are skipped. Replaced originals go to `.changes-workflow-backup/<timestamp>/`.
 - **Git:** privately ignores the agent files in `.git/info/exclude`, which is never committed; `.gitignore` is not touched. Files git already tracks, such as a committed `AGENTS.md`, are not excluded. The templates are never excluded.
 
