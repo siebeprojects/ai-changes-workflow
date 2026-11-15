@@ -14,11 +14,18 @@
 # (never committed, never written to .gitignore). The templates in
 # changes/_templates/ are meant to be committed.
 #
-# With --changes <path>, the change documents live elsewhere (for example a
-# separate store repo): no templates are copied, the rules and the skill point
-# to that path, and Claude Code gets access to it.
+# A change is planned in changes/<name>/ (proposal.md, spec.md, plan.md) and
+# built with ./changes/<name>/ (qa.md, tasks.md) in each repository where the
+# code changes. The rules and the skill write `changes/` for the planning
+# documents and `./changes/` for the repository's own folder.
 #
-# Usage: ./install.sh [--force] [--dry-run] [--no-exclude] [--changes <path>] <target-repo>
+# With --changes <path>, the planning documents live elsewhere (for example a
+# separate store repo): the rules and the skill point `changes/` to that path,
+# only the qa.md and tasks.md templates are copied, and Claude Code gets
+# access to it. Install the store itself with --store: it gets only the
+# proposal.md, spec.md and plan.md templates.
+#
+# Usage: ./install.sh [--force] [--dry-run] [--no-exclude] [--changes <path> | --store] <target-repo>
 
 set -euo pipefail
 
@@ -31,10 +38,13 @@ DRY_RUN=0
 EXCLUDE=1
 TARGET=""
 CHANGES="changes"
+STORE=0
+PLANNING_TEMPLATES="proposal.md spec.md plan.md"
+WORK_TEMPLATES="qa.md tasks.md"
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--force] [--dry-run] [--no-exclude] [--changes <path>] <target-repo>
+Usage: $(basename "$0") [--force] [--dry-run] [--no-exclude] [--changes <path> | --store] <target-repo>
 
 Installs the changes workflow into <target-repo>:
   AGENTS.md                  workflow rules in a marked block (rest of the file is kept)
@@ -51,11 +61,14 @@ Options:
   --dry-run         Show what would happen without changing anything
   --no-exclude      Do not add the agent files to .git/info/exclude
                     (use this when they should be committed too)
-  --changes <path>  Where the change documents live, relative to <target-repo>
-                    (default: changes). With another path, for example
-                    ../my-changes-store/changes, no templates are copied, the
-                    rules and the skill point to that path, and Claude Code gets
-                    access to it through .claude/settings.local.json.
+  --changes <path>  Where proposal.md, spec.md and plan.md live, relative to
+                    <target-repo> (default: changes). With another path, for
+                    example ../my-changes-store/changes, the rules and the skill
+                    point to that path, only the qa.md and tasks.md templates
+                    are copied, and Claude Code gets access to it through
+                    .claude/settings.local.json.
+  --store           <target-repo> is a separate store for proposal.md, spec.md
+                    and plan.md: only their templates are copied.
   -h, --help        Show this help
 EOF
 }
@@ -70,6 +83,7 @@ while [ $# -gt 0 ]; do
       if [ $# -eq 0 ]; then echo "--changes needs a path" >&2; exit 1; fi
       CHANGES="${1%/}" ;;
     --changes=*) CHANGES="${1#--changes=}"; CHANGES="${CHANGES%/}" ;;
+    --store) STORE=1 ;;
     -h|--help) usage; exit 0 ;;
     -*) echo "Unknown option: $1" >&2; usage >&2; exit 1 ;;
     *)
@@ -80,6 +94,9 @@ while [ $# -gt 0 ]; do
 done
 
 if [ -z "$TARGET" ]; then usage >&2; exit 1; fi
+if [ "$STORE" -eq 1 ] && [ "$CHANGES" != "changes" ]; then
+  echo "Use either --changes (code repository) or --store (the store itself), not both" >&2; exit 1
+fi
 if [ ! -d "$TARGET" ]; then echo "Error: target '$TARGET' is not a directory" >&2; exit 1; fi
 TARGET="$(cd "$TARGET" && pwd)"
 if [ "$TARGET" = "$SRC" ]; then echo "Error: target is this repository itself" >&2; exit 1; fi
@@ -104,13 +121,18 @@ if [ "$CHANGES" != "changes" ]; then
   else
     echo "Warning: changes folder '$CHANGES' does not exist (relative to $TARGET)."
   fi
-  # Point the rules and the skill to the external changes folder.
+  # Point the planning documents (`changes/`) to the external folder; the
+  # repository's own folder (`./changes/`) does not match and stays.
   for f in "$STAGE/AGENTS.md" "$STAGE/.agents/skills/$SKILL"/*.md; do
     [ -f "$f" ] || continue
     sed "s#\`changes/#\`$CHANGES/#g" "$f" > "$f.tmp" && mv "$f.tmp" "$f"
   done
-  # The templates live with the changes, not in this repository.
-  rm -rf "$STAGE/changes"
+  # The planning templates live with the planning documents.
+  for t in $PLANNING_TEMPLATES; do rm -f "$STAGE/changes/_templates/$t"; done
+fi
+if [ "$STORE" -eq 1 ]; then
+  # qa.md and tasks.md are written in the code repositories, not in the store.
+  for t in $WORK_TEMPLATES; do rm -f "$STAGE/changes/_templates/$t"; done
 fi
 
 # An AGENTS.md or CLAUDE.md that exists before installing belongs to the
@@ -427,6 +449,7 @@ echo "Installing the changes workflow"
 echo "  from: $SRC"
 echo "  into: $TARGET"
 [ "$EXTERNAL_CHANGES" -eq 1 ] && echo "  changes: $CHANGES"
+[ "$STORE" -eq 1 ] && echo "  mode: store (planning templates only)"
 [ "$DRY_RUN" -eq 1 ] && echo "  mode: dry-run (no changes will be made)"
 echo
 
@@ -434,7 +457,7 @@ echo
 install_agents_md
 install_claude_md
 
-# 2. The skill and, unless the changes live elsewhere, the templates.
+# 2. The skill and the templates that belong in this repository.
 for dir in ".agents/skills/$SKILL" changes/_templates; do
   [ -d "$STAGE/$dir" ] || continue
   while IFS= read -r f; do
@@ -453,8 +476,12 @@ if [ "$DRY_RUN" -eq 0 ]; then
   echo
   echo "Next steps:"
   if [ "$EXTERNAL_CHANGES" -eq 1 ]; then
-    echo "  1. Review AGENTS.md and .agents/skills/$SKILL/."
-    echo "  2. Change documents live in $CHANGES; templates are in $CHANGES/_templates/."
+    echo "  1. Review AGENTS.md, .agents/skills/$SKILL/ and changes/_templates/, and commit the templates."
+    echo "  2. Changes are planned in $CHANGES; qa.md and tasks.md go in changes/<name>/ here, on the change's branch."
+  elif [ "$STORE" -eq 1 ]; then
+    echo "  1. Review AGENTS.md, .agents/skills/$SKILL/ and changes/_templates/, and commit the templates."
+    echo "  2. Start a change: mkdir changes/feat-short-name and copy the proposal template into it."
+    echo "  3. Install each code repository with --changes pointing here."
   else
     echo "  1. Review AGENTS.md, .agents/skills/$SKILL/ and changes/_templates/, and commit the templates."
     echo "  2. Start a change: mkdir changes/feat-short-name and copy the proposal template into it."

@@ -2,13 +2,13 @@
 
 ## Workflow
 
-1. Read `AGENTS.md` and the change's `proposal.md`, `spec.md`, `plan.md`, and `qa.md`. Ask which functional requirement entry of the plan to build if it is not given; otherwise take the next one in the plan.
-2. Confirm that the proposal, specification, technical plan, and QA plan are approved and that material questions are resolved. If approval is unclear, ask before coding.
+1. Read `AGENTS.md`, the change's `proposal.md`, `spec.md` and `plan.md` in `changes/<type>-<short-name>/`, and its `qa.md` and `tasks.md` in `./changes/<type>-<short-name>/` on the change's branch. Ask which task to build if it is not given; otherwise take the next open task in `tasks.md`.
+2. Confirm that the proposal, specification, technical plan, QA plan and tasks are approved and that material questions are resolved. If approval is unclear, ask before coding.
 3. Inspect the relevant existing code, identify reusable functionality, and explain the proposed small change. Wait for explicit approval before modifying code.
-4. Build only that functional requirement entry, following the approved technical approach and the coding principles below.
+4. Build only that task, following the approved technical approach and the coding principles below.
 5. Write or update the relevant automated tests, preferably before implementation when practical. Include normal behavior, error cases, and boundaries identified in `qa.md`.
 6. Run the relevant tests and checks. Do not claim that a test passed unless it was actually executed.
-7. Report changed files, test results, outstanding issues, and any deviations. Put the test results in the pull request's Tests section, not in `qa.md`.
+7. Check the task off in `tasks.md`. Report changed files, test results, outstanding issues, and any deviations. Put the test results in the pull request's Tests section, not in `qa.md`.
 8. Stop and request approval before changing the approved proposal, specification, architecture, or technical approach. Do not commit without permission.
 
 ## Coding Principles
@@ -64,7 +64,7 @@
 
 A change is complete only when:
 
-- It satisfies the approved `proposal.md`, `spec.md` and `plan.md`.
+- It satisfies the approved `proposal.md`, `spec.md` and `plan.md`, and every task in `tasks.md` is checked off.
 - It works in every case it can be used in, verified, with no known edge cases.
 - Relevant `qa.md` checks have been implemented and executed, or any exceptions are explicitly reported.
 - The implementation is readable, maintainable, and does not unnecessarily complicate future features.
