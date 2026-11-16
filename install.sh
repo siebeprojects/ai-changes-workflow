@@ -21,14 +21,14 @@
 # branch. The rules and the skill write `changes/` for the store and
 # `./changes/` for the repository's own folder.
 #
-# By default the target repository is its own store and gets all templates.
-# With several repositories, the store is a separate repository installed with
-# --store, which also gets all templates. Each code repository is installed
-# with --changes <path> pointing to the store's changes folder: the rules and
-# the skill point `changes/` to that path, Claude Code gets access to it, and
-# no templates are copied, so they exist only in the store.
+# --repo <dir> alone: the repository is its own store and gets all templates.
+# --store <dir> alone: sets up a separate store, which gets all templates.
+# --repo <dir> --store <dir>: a code repository that uses that store. The rules
+# and the skill point `changes/` to the store's changes folder, as a path
+# relative to the repository, Claude Code gets access to it, and no templates
+# are copied, so they exist only in the store. The store must be set up first.
 #
-# Usage: ./install.sh [--force] [--dry-run] [--no-exclude] [--changes <path> | --store] <target-repo>
+# Usage: ./install.sh [--force] [--dry-run] [--no-exclude] [--repo <dir>] [--store <dir>]
 
 set -euo pipefail
 
@@ -39,40 +39,52 @@ END_MARK="<!-- changes-workflow:end -->"
 FORCE=0
 DRY_RUN=0
 EXCLUDE=1
-TARGET=""
+REPO=""
+STORE=""
 CHANGES="changes"
-STORE=0
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--force] [--dry-run] [--no-exclude] [--changes <path> | --store] <target-repo>
+Usage: $(basename "$0") [--force] [--dry-run] [--no-exclude] [--repo <dir>] [--store <dir>]
 
-Installs the changes workflow into <target-repo>:
+Installs the changes workflow:
+  --repo <dir>                a repository that is its own store
+  --store <dir>               a separate store, used by code repositories
+  --repo <dir> --store <dir>  a code repository that uses that store
+                              (set up the store first)
+
+What is installed:
   AGENTS.md                  workflow rules in a marked block (rest of the file is kept)
   CLAUDE.md                  imports AGENTS.md
   .agents/skills/$SKILL/     the skill, linked from .claude/skills/$SKILL
   changes/_templates/        the document templates, only in the store (commit these)
 
+A code repository gets no templates: its rules and skill point to the store's
+changes folder, and Claude Code gets access to it through
+.claude/settings.local.json.
+
 When a file already exists and differs, you are asked whether to overwrite
 it. Without a terminal (e.g. CI), conflicting files are skipped.
 
 Options:
+  --repo <dir>      The repository to install into
+  --store <dir>     The store: installed into when given alone, used by
+                    --repo when given with it
   --force           Overwrite files that differ without asking
                     (originals moved to .changes-workflow-backup/<timestamp>/)
   --dry-run         Show what would happen without changing anything
   --no-exclude      Do not add the agent files to .git/info/exclude
                     (use this when they should be committed too)
-  --changes <path>  The store's changes folder, relative to <target-repo>
-                    (default: changes, so the repository is its own store).
-                    With another path, for example
-                    ../my-changes-store/changes, the rules and the skill point
-                    to that path, Claude Code gets access to it through
-                    .claude/settings.local.json, and no templates are copied.
-  --store           <target-repo> is a separate store, used by the code
-                    repositories installed with --changes: it gets all
-                    templates.
   -h, --help        Show this help
 EOF
+}
+
+# The value of an option such as --repo, or exit when it is missing.
+option_value() {
+  if [ $# -lt 2 ] || [ -z "$2" ] || [ "${2#-}" != "$2" ]; then
+    echo "$1 needs a folder" >&2; exit 1
+  fi
+  printf '%s\n' "$2"
 }
 
 while [ $# -gt 0 ]; do
@@ -80,31 +92,62 @@ while [ $# -gt 0 ]; do
     --force) FORCE=1 ;;
     --dry-run) DRY_RUN=1 ;;
     --no-exclude) EXCLUDE=0 ;;
-    --changes)
-      shift
-      if [ $# -eq 0 ]; then echo "--changes needs a path" >&2; exit 1; fi
-      CHANGES="${1%/}" ;;
-    --changes=*) CHANGES="${1#--changes=}"; CHANGES="${CHANGES%/}" ;;
-    --store) STORE=1 ;;
+    --repo) REPO="$(option_value "$@")"; shift ;;
+    --repo=*) REPO="${1#--repo=}" ;;
+    --store) STORE="$(option_value "$@")"; shift ;;
+    --store=*) STORE="${1#--store=}" ;;
+    --changes|--changes=*)
+      echo "--changes was removed: use --repo <dir> --store <dir>" >&2; exit 1 ;;
     -h|--help) usage; exit 0 ;;
     -*) echo "Unknown option: $1" >&2; usage >&2; exit 1 ;;
-    *)
-      if [ -n "$TARGET" ]; then echo "Only one target allowed" >&2; exit 1; fi
-      TARGET="$1" ;;
+    *) echo "Name the folder with --repo or --store: $1" >&2; usage >&2; exit 1 ;;
   esac
   shift
 done
 
-if [ -z "$TARGET" ]; then usage >&2; exit 1; fi
-if [ "$STORE" -eq 1 ] && [ "$CHANGES" != "changes" ]; then
-  echo "Use either --changes (code repository) or --store (the store itself), not both" >&2; exit 1
-fi
-if [ ! -d "$TARGET" ]; then echo "Error: target '$TARGET' is not a directory" >&2; exit 1; fi
-TARGET="$(cd "$TARGET" && pwd)"
-if [ "$TARGET" = "$SRC" ]; then echo "Error: target is this repository itself" >&2; exit 1; fi
+if [ -z "$REPO" ] && [ -z "$STORE" ]; then usage >&2; exit 1; fi
 
-# Files to install are staged in a temporary folder, so paths can be adjusted
-# for --changes before they are compared with and copied to the target.
+# The absolute path of a folder, or exit when it is not one.
+folder() {
+  if [ ! -d "$1" ]; then echo "Error: '$1' is not a folder" >&2; exit 1; fi
+  (cd "$1" && pwd -P)
+}
+
+# The path from folder $1 to path $2, both absolute, such as ../store/changes.
+relative_path() {
+  local from="$1" to="$2" up="" rest
+  while true; do
+    case "$to/" in "$from"/*) break ;; esac
+    if [ "$from" = "/" ]; then break; fi
+    from="$(dirname "$from")"; up="../$up"
+  done
+  rest="${to#"$from"}"; rest="${rest#/}"
+  rest="$up$rest"; rest="${rest%/}"
+  printf '%s\n' "${rest:-.}"
+}
+
+if [ -n "$REPO" ]; then REPO="$(folder "$REPO")"; fi
+if [ -n "$STORE" ]; then STORE="$(folder "$STORE")"; fi
+if [ "$REPO" = "$SRC" ] || [ "$STORE" = "$SRC" ]; then
+  echo "Error: cannot install into this repository itself" >&2; exit 1
+fi
+
+# The repository installed into: the store when it is given alone.
+TARGET="${REPO:-$STORE}"
+if [ -n "$REPO" ] && [ -n "$STORE" ]; then
+  if [ "$REPO" = "$STORE" ]; then
+    echo "Error: --repo and --store are the same folder; use --repo alone" >&2; exit 1
+  fi
+  if [ ! -d "$STORE/changes/_templates" ]; then
+    echo "Error: $STORE is not set up as a store yet. Run first:" >&2
+    echo "  $0 --store $STORE" >&2
+    exit 1
+  fi
+  CHANGES="$(relative_path "$REPO" "$STORE/changes")"
+fi
+
+# Files to install are staged in a temporary folder, so the path to a separate
+# store can be filled in before they are compared with and copied to the target.
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
 (cd "$SRC" && find AGENTS.md CLAUDE.md ".agents/skills/$SKILL" changes/_templates -type f ! -name '.DS_Store') |
@@ -117,17 +160,14 @@ EXTERNAL_CHANGES=0
 CHANGES_ABS=""
 if [ "$CHANGES" != "changes" ]; then
   EXTERNAL_CHANGES=1
-  case "$CHANGES" in /*) CHANGES_ABS="$CHANGES" ;; *) CHANGES_ABS="$TARGET/$CHANGES" ;; esac
-  if [ -d "$CHANGES_ABS" ]; then
-    CHANGES_ABS="$(cd "$CHANGES_ABS" && pwd)"
-  else
-    echo "Warning: changes folder '$CHANGES' does not exist (relative to $TARGET)."
-  fi
-  # Point the planning documents (`changes/`) to the external folder; the
-  # repository's own folder (`./changes/`) does not match and stays.
+  CHANGES_ABS="$STORE/changes"
+  # Point the planning documents (`changes/`) to the store's folder; the
+  # repository's own folder (`./changes/`) does not match and stays. Characters
+  # that sed treats specially in a replacement are escaped.
+  replacement="$(printf '%s' "$CHANGES" | sed 's/[\\&#]/\\&/g')"
   for f in "$STAGE/AGENTS.md" "$STAGE/.agents/skills/$SKILL"/*.md; do
     [ -f "$f" ] || continue
-    sed "s#\`changes/#\`$CHANGES/#g" "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+    sed "s#\`changes/#\`$replacement/#g" "$f" > "$f.tmp" && mv "$f.tmp" "$f"
   done
   # All templates live only in the store.
   rm -rf "$STAGE/changes/_templates"
@@ -455,8 +495,8 @@ update_exclude() {
 echo "Installing the changes workflow"
 echo "  from: $SRC"
 echo "  into: $TARGET"
-[ "$EXTERNAL_CHANGES" -eq 1 ] && echo "  changes: $CHANGES"
-[ "$STORE" -eq 1 ] && echo "  mode: store (all templates, used by the code repositories)"
+[ "$EXTERNAL_CHANGES" -eq 1 ] && echo "  store: $STORE (changes: $CHANGES)"
+[ -z "$REPO" ] && echo "  mode: store (all templates, used by the code repositories)"
 [ "$DRY_RUN" -eq 1 ] && echo "  mode: dry-run (no changes will be made)"
 echo
 
@@ -487,10 +527,10 @@ if [ "$DRY_RUN" -eq 0 ]; then
     echo "  1. Review AGENTS.md and .agents/skills/$SKILL/."
     echo "  2. Changes are planned in $CHANGES, with the templates in $CHANGES/_templates/;"
     echo "     qa.md and tasks.md go in changes/<name>/ here, on the change's branch."
-  elif [ "$STORE" -eq 1 ]; then
+  elif [ -z "$REPO" ]; then
     echo "  1. Review AGENTS.md, .agents/skills/$SKILL/ and changes/_templates/, and commit the templates."
     echo "  2. Start a change: mkdir changes/feat-short-name and copy the proposal template into it."
-    echo "  3. Install each code repository with --changes pointing here."
+    echo "  3. Install each code repository: $0 --repo <code-repo> --store $TARGET"
   else
     echo "  1. Review AGENTS.md, .agents/skills/$SKILL/ and changes/_templates/, and commit the templates."
     echo "  2. Start a change: mkdir changes/feat-short-name and copy the proposal template into it."
