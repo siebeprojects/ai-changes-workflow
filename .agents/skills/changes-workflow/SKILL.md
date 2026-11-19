@@ -7,8 +7,8 @@ description: Plan a small change (proposal, specification, technical plan, QA pl
 
 Each change is planned in its own folder, `changes/<type>-<short-name>/`, with one of these types: `feat` (new functionality), `fix` (bug fix), `refactor` (code restructured, behavior the same), `perf` (faster or lighter), `test` (tests only), `docs` (documentation only) or `chore` (maintenance, such as tooling, templates or workflow). Its documents are written in this order:
 
-1. `proposal.md`: the user story, why the change is needed, and what we would like to have.
-2. `spec.md`: functional and non-functional requirements, acceptance criteria, boundaries and constraints, in plain language.
+1. `proposal.md`: the user story, why the change is needed, the value it brings, and what we would like to have.
+2. `spec.md`: acceptance criteria (what someone can do or see), functional and non-functional requirements (what the system does and how well, with its rules), boundaries and constraints, in plain language.
 3. `plan.md`: what must exist to meet each functional requirement, in the order to build them, and the technical decisions.
 
 Each repository where the change is built gets `./changes/<type>-<short-name>/` on the change's branch, committed with the code, with:
