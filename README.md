@@ -6,8 +6,8 @@ A change is planned first:
 
 ```
 changes/feat-short-name/
-├── proposal.md   the user story, why, and what we would like to have
-├── spec.md       requirements and acceptance criteria, in plain language
+├── proposal.md   the user story, why, the value, and what we would like to have
+├── spec.md       acceptance criteria and requirements, in plain language
 └── plan.md       what must exist to meet each requirement, and the decisions
 ```
 

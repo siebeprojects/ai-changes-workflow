@@ -3,10 +3,10 @@
 **Proposal:** [proposal.md](./proposal.md)
 
 ## Acceptance Criteria
-- **AC-001:** Given <situation>, when <someone does something>, then <what they see or can do>.
+- **AC-001:** <What someone can do or see when the change is done, in one short sentence, such as "The user can delete their account with a button in their settings.">
 
 ## Functional Requirements
-- **FR-001:** <What someone can do or see, in plain language, with no file names, folders, commands or code>
+- **FR-001:** <What the system does, with its rules and details, in plain language, such as "Deleting an account asks for confirmation and removes all personal data within 30 days.">
   - <Optional sub-item, one level only>
 
 ## Non-Functional Requirements

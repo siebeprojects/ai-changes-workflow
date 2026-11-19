@@ -17,8 +17,8 @@
 <!-- changes-workflow:start -->
 ## Change documentation
 - Plan each independent change (new feature, bug fix, refactoring, or other work) under `changes/<type>-<short-name>/`, with one of these types: `feat` (new functionality), `fix` (bug fix), `refactor` (code restructured, behavior the same), `perf` (faster or lighter), `test` (tests only), `docs` (documentation only) or `chore` (maintenance, such as tooling, templates or workflow). Branches and pull requests use the same type and name.
-- `proposal.md` gives the user story, why the change is needed, and what we would like to have, in plain language.
-- `spec.md` defines the functional and non-functional requirements, acceptance criteria, boundaries and constraints, in plain language. How it is built goes in `plan.md`.
+- `proposal.md` gives the user story, why the change is needed, the value it brings, and what we would like to have, in plain language.
+- `spec.md` defines, in plain language, the acceptance criteria (what someone can do or see), the functional and non-functional requirements (what the system does and how well, with its rules), and the boundaries and constraints. How it is built goes in `plan.md`.
 - `plan.md` states what must exist to meet each functional requirement, in the order to build them, with no explanations or steps, and records the technical decisions.
 - Each repository where the change is built gets `./changes/<type>-<short-name>/` on the change's branch, with `qa.md` and `tasks.md` for the part built in that repository, committed with the code.
 - `qa.md` defines upfront how the acceptance criteria built in this repository are verified. The results go in the pull request.
